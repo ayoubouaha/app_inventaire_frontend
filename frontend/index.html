@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Inventaire Moteurs — Marsa Maroc</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F0F2F5;--white:#FFFFFF;--primary:#1A6BFF;--primary-dark:#1558D6;--primary-light:#EEF3FF;
+  --text:#1A1D23;--text2:#6B7280;--text3:#9CA3AF;--border:#E5E7EB;--border2:#D1D5DB;
+  --red:#EF4444;--red-light:#FEF2F2;--green:#10B981;--green-light:#ECFDF5;
+  --amber:#F59E0B;--amber-light:#FFFBEB;
+  --mono:'JetBrains Mono',monospace;--sans:'Inter',sans-serif;
+  --shadow:0 1px 3px rgba(0,0,0,.08);--shadow-md:0 4px 12px rgba(0,0,0,.08);--shadow-lg:0 10px 30px rgba(0,0,0,.1);
+  --radius:12px;--radius-sm:8px;--radius-xs:6px;
+}
+html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+#app{display:flex;height:100vh;overflow:hidden}
+#sidebar{width:240px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.sidebar-logo{padding:18px 16px 14px;border-bottom:1px solid var(--border);text-align:center}
+.sidebar-nav{flex:1;padding:12px;display:flex;flex-direction:column;gap:2px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius-sm);cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all .15s;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:var(--bg);color:var(--text)}.nav-item.active{background:var(--primary-light);color:var(--primary);font-weight:600}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;stroke:currentColor}
+.nav-count{margin-left:auto;background:var(--primary);color:white;font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:20px;font-weight:600}
+.nav-item:not(.active) .nav-count{background:var(--border);color:var(--text2)}
+.sidebar-bottom{padding:14px 12px;border-top:1px solid var(--border)}
+.sidebar-info{font-size:11px;color:var(--text3);line-height:1.7;background:var(--bg);border-radius:var(--radius-sm);padding:10px 12px}
+#main{flex:1;overflow-y:auto;background:var(--bg)}
+.topbar{display:flex;align-items:center;gap:12px;padding:16px 24px;background:var(--white);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+.topbar-title{font-size:16px;font-weight:700;color:var(--text);flex:1}
+.search-wrap{position:relative;flex:1;max-width:300px}
+.search-wrap input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px 8px 36px;color:var(--text);font-size:13px;outline:none;transition:border .15s}
+.search-wrap input:focus{border-color:var(--primary);background:var(--white)}
+.search-wrap input::placeholder{color:var(--text3)}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;font-family:var(--sans);white-space:nowrap}
+.btn-primary{background:var(--primary);color:white}.btn-primary:hover{background:var(--primary-dark)}
+.btn-secondary{background:var(--white);color:var(--text);border:1.5px solid var(--border)}.btn-secondary:hover{background:var(--bg)}
+.btn-danger{background:var(--white);color:var(--red);border:1.5px solid var(--red)}.btn-danger:hover{background:var(--red-light)}
+.btn-ghost{background:transparent;color:var(--text2);border:1.5px solid var(--border)}.btn-ghost:hover{background:var(--bg)}
+.btn svg{width:14px;height:14px}.btn-sm{padding:6px 12px;font-size:12px}
+.page{display:none;padding:24px}.page.active{display:block}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+.stat-label{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);margin-bottom:8px}
+.stat-value{font-size:30px;font-weight:700;color:var(--text);font-family:var(--mono);line-height:1}
+.stat-sub{font-size:12px;color:var(--text3);margin-top:4px}.stat-card.primary .stat-value{color:var(--primary)}
+.engine-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
+.engine-card{background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:all .2s;box-shadow:var(--shadow)}
+.engine-card:hover{border-color:var(--primary);box-shadow:var(--shadow-md);transform:translateY(-2px)}
+.engine-card-photo{height:150px;background:var(--bg);overflow:hidden;position:relative}
+.engine-card-photo img{width:100%;height:100%;object-fit:cover;transition:transform .3s}
+.engine-card:hover .engine-card-photo img{transform:scale(1.03)}
+.engine-card-photo .no-photo{display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);flex-direction:column;gap:8px;font-size:12px}
+.port-badge{position:absolute;top:10px;left:10px;background:var(--primary);color:white;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px}
+.photo-count-badge{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.55);color:white;font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px}
+.engine-card-body{padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.engine-serial{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--primary)}
+.brand-badge{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text2);background:var(--bg);border:1px solid var(--border);padding:2px 8px;border-radius:20px}
+.engine-model{font-size:14px;font-weight:600;color:var(--text)}
+.engine-pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{font-size:11px;color:var(--text2);background:var(--bg);border:1px solid var(--border);padding:3px 8px;border-radius:var(--radius-xs);font-family:var(--mono)}
+.card-machine{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:4px;margin-top:2px}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 24px;text-align:center;gap:14px}
+.empty-icon{width:56px;height:56px;background:var(--bg);border-radius:16px;display:flex;align-items:center;justify-content:center;color:var(--text3)}
+.empty h3{font-size:17px;font-weight:600}.empty p{font-size:13px;color:var(--text3);max-width:300px;line-height:1.6}
+.filter-bar{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.filter-btn{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1.5px solid var(--border);background:var(--white);color:var(--text2);transition:all .15s}
+.filter-btn:hover,.filter-btn.active{background:var(--primary);border-color:var(--primary);color:white}
+.form-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);margin-bottom:16px}
+.form-section-title{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--primary);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.form-section-title::after{content:'';flex:1;height:1px;background:var(--primary-light)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+label{font-size:12px;font-weight:600;color:var(--text2)}
+label .req{color:var(--primary);margin-left:2px}
+input[type=text],input[type=number],select{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text);font-size:13px;font-family:var(--sans);outline:none;transition:all .15s;width:100%}
+input:focus,select:focus{border-color:var(--primary);background:var(--white);box-shadow:0 0 0 3px rgba(26,107,255,.08)}
+input::placeholder{color:var(--text3)}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B7280' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+.mono-input{font-family:var(--mono)!important;letter-spacing:.02em}
+.field-hint{font-size:11px;color:var(--text3);margin-top:2px}
+.dup-warn{font-size:11px;color:var(--amber);display:none;align-items:center;gap:4px}
+.dup-warn.show{display:flex}
+.photo-section{display:flex;flex-direction:column;gap:10px}
+.photo-dropzone{border:2px dashed var(--border2);border-radius:var(--radius-sm);padding:16px;text-align:center;cursor:pointer;transition:all .15s;background:var(--bg);position:relative}
+.photo-dropzone:hover{border-color:var(--primary);background:var(--primary-light)}
+.photo-dropzone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.photo-dropzone .up-icon{color:var(--text3);margin-bottom:6px}
+.photo-dropzone .up-text{font-size:12px;color:var(--text3)}
+.photo-dropzone .up-text strong{color:var(--primary)}
+.photo-gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px}
+.photo-thumb{position:relative;aspect-ratio:1;border-radius:var(--radius-sm);overflow:hidden;border:1.5px solid var(--border)}
+.photo-thumb img{width:100%;height:100%;object-fit:cover;cursor:zoom-in}
+.photo-thumb .del-btn{position:absolute;top:4px;right:4px;background:rgba(239,68,68,.9);border:none;color:white;width:20px;height:20px;border-radius:50%;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;font-weight:700}
+.photo-count{font-size:11px;color:var(--text3);margin-top:2px}
+.photo-count span{color:var(--primary);font-weight:600}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(17,24,39,.4);z-index:100;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--white);border-radius:var(--radius);width:100%;max-width:660px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg)}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--white);z-index:1}
+.modal-header h2{font-size:16px;font-weight:700;color:var(--text)}
+.modal-close{background:var(--bg);border:none;color:var(--text2);width:30px;height:30px;border-radius:var(--radius-xs);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600}
+.modal-close:hover{background:var(--border)}
+.modal-body{padding:24px;display:flex;flex-direction:column;gap:18px}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:var(--white)}
+.detail-hero{border-radius:var(--radius);overflow:hidden;margin-bottom:16px;position:relative;background:var(--bg);height:200px}
+.detail-hero img{width:100%;height:100%;object-fit:cover}
+.detail-hero .hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(17,24,39,.7),transparent 60%)}
+.hero-info{position:absolute;bottom:16px;left:18px;right:18px}
+.hero-serial{font-family:var(--mono);font-size:18px;font-weight:700;color:white}
+.hero-model{font-size:13px;color:rgba(255,255,255,.8);margin-top:2px}
+.specs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.spec-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px}
+.spec-box .spec-label{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);margin-bottom:4px}
+.spec-box .spec-val{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--text)}
+.section-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px}
+.alert{padding:12px 14px;border-radius:var(--radius-sm);font-size:13px;display:flex;align-items:flex-start;gap:8px;line-height:1.5}
+.alert-warn{background:var(--amber-light);border:1px solid #FDE68A;color:#92400E}
+.alert-err{background:var(--red-light);border:1px solid #FCA5A5;color:#991B1B}
+.alert-ok{background:var(--green-light);border:1px solid #6EE7B7;color:#065F46}
+.export-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+.export-card{background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);padding:20px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow)}
+.export-card:hover{border-color:var(--primary)}
+.export-card .exp-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+.export-card h3{font-size:14px;font-weight:700;color:var(--text)}
+.export-card p{font-size:12px;color:var(--text3);line-height:1.6;flex:1}
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.chart-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+.chart-title{font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);margin-bottom:14px}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.bar-label{font-size:12px;color:var(--text2);width:90px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{flex:1;height:7px;background:var(--bg);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;background:var(--primary);transition:width .5s}
+.bar-fill.green{background:var(--green)}
+.bar-val{font-size:12px;color:var(--text3);font-family:var(--mono);width:20px;text-align:right}
+.step-badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--text3);margin-bottom:6px}
+.step-num{width:18px;height:18px;border-radius:50%;background:var(--primary);color:white;font-size:10px;display:flex;align-items:center;justify-content:center;font-weight:700}
+.divider{height:1px;background:var(--border);margin:6px 0}
+.sb-dot{width:8px;height:8px;border-radius:50%;background:var(--amber);transition:background .4s;flex-shrink:0}
+.sb-dot.online{background:var(--green)}.sb-dot.offline{background:var(--red)}
+#toast{position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast-item{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 16px;font-size:13px;color:var(--text);animation:slideIn .2s ease;box-shadow:var(--shadow-md);display:flex;align-items:center;gap:8px;font-weight:500}
+.toast-item.ok{border-left:3px solid var(--green)}.toast-item.err{border-left:3px solid var(--red)}
+@keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:640px){#sidebar{display:none}.mobile-nav{display:flex!important}.form-grid{grid-template-columns:1fr}.chart-row{grid-template-columns:1fr}.page{padding:16px;padding-bottom:80px}}
+.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--border);z-index:50;padding:6px 0 calc(6px + env(safe-area-inset-bottom))}
+.mobile-nav-inner{display:flex;justify-content:space-around}
+.mob-btn{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 12px;color:var(--text3);font-size:10px;font-weight:500;border:none;background:none}
+.mob-btn.active,.mob-btn:hover{color:var(--primary)}.mob-btn svg{width:20px;height:20px}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+</style>
+</head>
+<body>
+<!-- LOGIN OVERLAY -->
+<!-- LOGIN PAGE -->
+<style>
+/* ── Root ── */
+#login-overlay{
+  position:fixed;inset:0;z-index:9999;display:none;
+  align-items:center;justify-content:center;
+  background:#003B70;overflow:hidden;font-family:'Inter',sans-serif;
+}
+
+/* ── Background soft gradient only — no lines ── */
+#login-overlay::before{
+  content:'';position:absolute;inset:0;
+  background-image:
+    radial-gradient(circle at 20% 50%, rgba(0,90,156,.5) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(0,90,156,.3) 0%, transparent 40%),
+    radial-gradient(circle at 60% 80%, rgba(0,30,80,.6) 0%, transparent 45%);
+  pointer-events:none;
+}
+
+/* ── Two-column wrapper ── */
+.lp-wrap{
+  position:relative;z-index:1;
+  display:flex;width:880px;max-width:96vw;
+  min-height:520px;border-radius:20px;overflow:hidden;
+  box-shadow:0 32px 80px rgba(0,0,0,.45);
+}
+
+/* ── Left panel — branding ── */
+.lp-left{
+  width:45%;flex-shrink:0;
+  background:linear-gradient(160deg,#005A9C 0%,#003B70 60%,#002654 100%);
+  padding:48px 40px;display:flex;flex-direction:column;justify-content:space-between;
+  position:relative;overflow:hidden;
+}
+.lp-left::before{
+  content:'';position:absolute;right:-60px;bottom:-60px;
+  width:240px;height:240px;border-radius:50%;
+  border:40px solid rgba(255,255,255,.05);
+}
+.lp-left::after{
+  content:'';position:absolute;right:40px;top:-40px;
+  width:140px;height:140px;border-radius:50%;
+  border:28px solid rgba(255,255,255,.06);
+}
+.lp-brand{position:relative;z-index:1}
+.lp-brand-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);
+  border-radius:6px;padding:5px 12px;margin-bottom:28px;
+}
+.lp-brand-badge span{font-size:10px;font-weight:700;letter-spacing:1.5px;color:#fff;text-transform:uppercase}
+.lp-brand-name{font-size:26px;font-weight:800;color:#fff;line-height:1.2;margin-bottom:10px;letter-spacing:-.3px}
+.lp-brand-name em{color:#fff;font-style:normal;opacity:.85}
+.lp-brand-desc{font-size:13px;color:rgba(255,255,255,.55);line-height:1.7;max-width:220px}
+.lp-left-footer{position:relative;z-index:1;font-size:11px;color:rgba(255,255,255,.35);letter-spacing:.3px}
+
+/* ── Right panel — form ── */
+.lp-right{
+  flex:1;background:#fff;
+  padding:48px 44px;display:flex;flex-direction:column;justify-content:center;
+}
+.lp-form-header{margin-bottom:36px}
+.lp-form-eyebrow{
+  font-size:10.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:#005A9C;margin-bottom:10px;
+}
+.lp-form-title{font-size:26px;font-weight:800;color:#003B70;margin-bottom:6px;letter-spacing:-.4px}
+.lp-form-sub{font-size:13px;color:#64748b}
+
+/* ── Field ── */
+.lp-field{margin-bottom:20px}
+.lp-label{
+  display:block;font-size:11.5px;font-weight:600;
+  color:#003B70;margin-bottom:7px;letter-spacing:.3px;text-transform:uppercase;
+}
+.lp-input-wrap{
+  display:flex;align-items:center;
+  border:1.5px solid #e2e8f0;border-radius:10px;background:#f8fafc;
+  padding:0 14px;gap:10px;
+  transition:border-color .2s,background .2s,box-shadow .2s;
+}
+.lp-input-wrap:focus-within{
+  border-color:#005A9C;background:#fff;
+  box-shadow:0 0 0 3px rgba(0,90,156,.1);
+}
+.lp-input-icon{
+  flex-shrink:0;color:#94a3b8;width:18px;height:18px;
+  transition:color .2s;pointer-events:none;
+}
+.lp-input-wrap:focus-within .lp-input-icon{color:#005A9C}
+.lp-input{
+  flex:1;min-width:0;
+  border:none !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  outline:none !important;
+  padding:13px 0;
+  font-size:14px;font-family:inherit;color:#1e293b;
+  border-radius:0;
+  -webkit-appearance:none;
+  appearance:none;
+}
+.lp-input::placeholder{color:#94a3b8}
+
+/* ── Error ── */
+#login-error{
+  display:none;align-items:center;gap:8px;
+  background:#fef2f2;border:1px solid #fecaca;border-radius:8px;
+  padding:10px 14px;margin-bottom:18px;color:#991b1b;font-size:12.5px;font-weight:500;
+}
+
+/* ── Submit button ── */
+.lp-btn{
+  width:100%;padding:14px;border:none;border-radius:10px;
+  background:linear-gradient(135deg,#005A9C,#003B70);
+  color:#fff;font-size:14px;font-weight:700;font-family:inherit;
+  letter-spacing:.4px;cursor:pointer;
+  transition:transform .15s,box-shadow .2s,background .2s;
+  box-shadow:0 4px 16px rgba(0,59,112,.35);
+  position:relative;overflow:hidden;
+}
+.lp-btn::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.1),transparent);
+  opacity:0;transition:opacity .2s;
+}
+.lp-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,59,112,.4)}
+.lp-btn:hover::after{opacity:1}
+.lp-btn:active{transform:translateY(0);box-shadow:0 4px 16px rgba(0,59,112,.35)}
+.lp-btn:disabled{opacity:.65;cursor:not-allowed;transform:none;box-shadow:none}
+
+/* ── Bottom note ── */
+.lp-secure-note{
+  margin-top:24px;display:flex;align-items:center;justify-content:center;gap:6px;
+  font-size:11.5px;color:#94a3b8;
+}
+.lp-secure-note svg{width:12px;height:12px;color:#10b981}
+
+/* ── Responsive ── */
+@media(max-width:640px){
+  .lp-left{display:none}
+  .lp-right{padding:36px 28px}
+  .lp-wrap{min-height:auto;border-radius:16px}
+}
+</style>
+
+<div id="login-overlay">
+  <div class="lp-wrap">
+
+    <!-- Left branding panel -->
+    <div class="lp-left">
+      <div class="lp-brand">
+        <div class="lp-brand-badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span>Accès sécurisé</span>
+        </div>
+        <div class="lp-brand-name">Marsa<br/><em>Maroc</em></div>
+        <div class="lp-brand-desc">Système de gestion d'inventaire des moteurs portuaires</div>
+      </div>
+      <div class="lp-left-footer">© 2026 Marsa Maroc</div>
+    </div>
+
+    <!-- Right form panel -->
+    <div class="lp-right">
+      <div class="lp-form-header">
+        <div class="lp-form-eyebrow">Portail d'accès</div>
+        <div class="lp-form-title">Connexion</div>
+        <div class="lp-form-sub">Entrez vos identifiants pour accéder au système</div>
+      </div>
+
+      <form id="login-form" onsubmit="return doLogin(event)">
+        <div class="lp-field">
+          <label class="lp-label" for="login-user">Identifiant</label>
+          <div class="lp-input-wrap">
+            <svg class="lp-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <input id="login-user" class="lp-input" type="text" placeholder="Votre identifiant" autocomplete="username" required/>
+          </div>
+        </div>
+        <div class="lp-field">
+          <label class="lp-label" for="login-pass">Mot de passe</label>
+          <div class="lp-input-wrap">
+            <svg class="lp-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <input id="login-pass" class="lp-input" type="password" placeholder="••••••••" autocomplete="current-password" required/>
+          </div>
+        </div>
+
+        <div id="login-error">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span id="login-error-msg"></span>
+        </div>
+
+        <button type="submit" id="login-btn" class="lp-btn">Se connecter</button>
+      </form>
+
+      <div class="lp-secure-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Connexion chiffrée et sécurisée
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="app">
+<aside id="sidebar">
+  <div class="sidebar-logo">
+    <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:2px">Inventaire Moteurs</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Marsa Maroc</div>
+    <div style="display:flex;align-items:center;gap:7px;background:var(--bg);border-radius:6px;padding:7px 10px">
+      <div class="sb-dot" id="sb-dot"></div>
+      <span id="sb-status-label" style="font-size:11px;color:var(--text2)">Connexion backend…</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <button class="nav-item active" onclick="navigate('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Tableau de bord
+    </button>
+    <button class="nav-item" onclick="navigate('engines')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+      Moteurs <span class="nav-count" id="nav-count">0</span>
+    </button>
+    <button class="nav-item" onclick="navigate('add')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Ajouter un moteur
+    </button>
+    <div class="divider"></div>
+    <button class="nav-item" onclick="navigate('export')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export / Import
+    </button>
+  </nav>
+  <div class="sidebar-bottom">
+    <div class="sidebar-info">
+      <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px"><span style="font-size:16px">🖥️</span><strong style="color:var(--text2)">Backend local</strong></div>
+      Données stockées dans<br>SQL Server local.<br>
+      <span id="sidebar-count" style="color:var(--primary);font-weight:600;display:block;margin-top:4px"></span>
+    </div>
+    <button onclick="logout()"
+            style="margin-top:10px;width:100%;padding:8px;background:none;border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text2);font-size:12px;font-weight:500;cursor:pointer;font-family:inherit">
+      Se déconnecter
+    </button>
+  </div>
+</aside>
+
+<main id="main">
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="topbar">
+      <span class="topbar-title">Tableau de bord</span>
+      <button class="btn btn-primary" onclick="navigate('add')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Ajouter
+      </button>
+    </div>
+    <div style="padding:24px">
+      <div class="stats-grid" id="stats-grid"></div>
+      <div class="chart-row" id="chart-row"></div>
+      <div id="recent-section"></div>
+    </div>
+  </div>
+
+  <!-- MOTEURS -->
+  <div class="page" id="page-engines">
+    <div class="topbar">
+      <span class="topbar-title">Tous les moteurs</span>
+      <div class="search-wrap">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="search-input" placeholder="Rechercher série, modèle, port…" oninput="renderEngines()"/>
+      </div>
+      <button class="btn btn-primary" onclick="navigate('add')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Ajouter
+      </button>
+    </div>
+    <div style="padding:24px">
+      <div class="filter-bar" id="port-filters"></div>
+      <div class="engine-grid" id="engine-grid"></div>
+    </div>
+  </div>
+
+  <!-- AJOUTER -->
+  <div class="page" id="page-add">
+    <div class="topbar"><span class="topbar-title" id="form-title">Enregistrer un moteur</span></div>
+    <div style="padding:24px;max-width:700px">
+      <div id="form-alert" style="margin-bottom:12px"></div>
+      <div class="form-card">
+        <div class="step-badge"><div class="step-num">1</div> Étape 1</div>
+        <div class="form-section-title">Plaque signalétique</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Numéro de série <span class="req">*</span></label><input type="text" id="f-serial" class="mono-input" placeholder="37266757" oninput="checkDuplicate()"/><div class="dup-warn" id="dup-warn">⚠ Ce numéro existe déjà</div></div>
+          <div class="form-group"><label>Marque <span class="req">*</span></label><select id="f-brand"><option value="">Sélectionner…</option><option>Cummins</option><option>MAN</option><option>Liebherr</option><option>Caterpillar</option><option>Volvo</option><option>MTU</option><option>Deutz</option><option>Perkins</option><option>Autre</option></select></div>
+          <div class="form-group"><label>Modèle / Type <span class="req">*</span></label><input type="text" id="f-model" class="mono-input" placeholder="QST30-G2"/></div>
+          <div class="form-group"><label>Année de fabrication</label><input type="number" id="f-year" placeholder="2023" min="1970" max="2030"/></div>
+          <div class="form-group"><label>Puissance (kW)</label><input type="number" id="f-power" placeholder="700" step="0.1"/></div>
+          <div class="form-group"><label>Vitesse (tr/min)</label><input type="number" id="f-rpm" placeholder="1500"/></div>
+          <div class="form-group"><label>Cylindrée (L)</label><input type="number" id="f-displacement" placeholder="30.5" step="0.1"/></div>
+          <div class="form-group"><label>N° travail / référence</label><input type="text" id="f-job" class="mono-input" placeholder="5134645 / SO50039"/></div>
+        </div>
+      </div>
+      <div class="form-card">
+        <div class="step-badge"><div class="step-num">2</div> Étape 2</div>
+        <div class="form-section-title">Contexte portuaire</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Port <span class="req">*</span></label><select id="f-port"><option value="">Sélectionner un port…</option><option>Agadir</option><option>Casablanca</option><option>Tanger Med</option><option>Nador</option><option>Safi</option><option>Jorf Lasfar</option><option>Mohammedia</option><option>Kénitra</option><option>Laâyoune</option><option>Dakhla</option></select></div>
+          <div class="form-group"><label>Code engin <span class="req">*</span></label><input type="text" id="f-machine" class="mono-input" placeholder="MM1GM11701"/><span class="field-hint">Identifiant unique de l'engin</span></div>
+          <div class="form-group"><label>Modèle engin <span class="req">*</span></label><input type="text" id="f-machine-model" class="mono-input" placeholder="GHMK 6507 / HMK300"/><span class="field-hint">Type / modèle de la grue</span></div>
+        </div>
+      </div>
+      <div class="form-card">
+        <div class="step-badge"><div class="step-num">3</div> Étape 3</div>
+        <div class="form-section-title">Photos</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Photos de la plaque <span class="req">*</span></label>
+            <div class="photo-section">
+              <div class="photo-dropzone"><input type="file" accept="image/*" multiple onchange="handlePhotos(event,'nameplate')"/><div class="up-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="26" height="26"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="12" cy="12" r="3"/></svg></div><div class="up-text"><strong>Ajouter des photos</strong><br>Sélection multiple</div></div>
+              <div class="photo-gallery" id="gallery-nameplate"></div>
+              <div class="photo-count" id="count-nameplate" style="display:none"><span id="n-nameplate">0</span> photo(s)</div>
+            </div>
+          </div>
+          <div class="form-group"><label>Photos du moteur</label>
+            <div class="photo-section">
+              <div class="photo-dropzone"><input type="file" accept="image/*" multiple onchange="handlePhotos(event,'engine')"/><div class="up-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="26" height="26"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg></div><div class="up-text"><strong>Ajouter des photos</strong><br>Sélection multiple</div></div>
+              <div class="photo-gallery" id="gallery-engine"></div>
+              <div class="photo-count" id="count-engine" style="display:none"><span id="n-engine">0</span> photo(s)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-ghost" onclick="resetForm();navigate('engines')">Annuler</button>
+        <button class="btn btn-primary" id="save-btn" onclick="saveEngine()" style="flex:1">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+          <span id="save-btn-label">Enregistrer le moteur</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPORT -->
+  <div class="page" id="page-export">
+    <div class="topbar"><span class="topbar-title">Export / Import</span></div>
+    <div style="padding:24px">
+      <p style="font-size:13px;color:var(--text3);margin-bottom:20px">Les données sont dans SQL Server local. Exportez en CSV ou PDF, ou importez depuis l'ancienne version.</p>
+      <div class="export-grid" style="margin-bottom:24px">
+        <div class="export-card">
+          <div class="exp-icon" style="background:var(--primary-light)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" width="20" height="20"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+          <h3>PDF — Tous les moteurs</h3><p>Rapport complet, une fiche par moteur avec toutes les specs.</p>
+          <button class="btn btn-primary" id="btn-all-pdf" onclick="exportAllPDF()">Télécharger PDF</button>
+        </div>
+        <div class="export-card">
+          <div class="exp-icon" style="background:var(--amber-light)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" width="20" height="20"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+          <h3>Exporter en CSV</h3><p>Toutes les données en tableau Excel / Google Sheets.</p>
+          <button class="btn btn-secondary" onclick="exportCSV()">Télécharger CSV</button>
+        </div>
+        <div class="export-card">
+          <div class="exp-icon" style="background:var(--green-light)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" width="20" height="20"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+          <h3>Importer JSON</h3><p>Migrez vos données depuis l'ancienne version locale vers le nouveau backend.</p>
+          <label class="btn btn-secondary" style="cursor:pointer">Choisir JSON<input type="file" accept=".json" style="display:none" onchange="importJSON(event)"/></label>
+        </div>
+        <div class="export-card">
+          <div class="exp-icon" style="background:var(--red-light)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" width="20" height="20"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></div>
+          <h3>Effacer tout</h3><p>Supprimer tous les moteurs de la base de données. Irréversible !</p>
+          <button class="btn btn-danger" onclick="confirmClear()">Vider l'inventaire</button>
+        </div>
+      </div>
+      <div id="import-log"></div>
+    </div>
+  </div>
+</main>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal">
+    <div class="modal-header"><h2 id="detail-title">Détail moteur</h2><button class="modal-close" onclick="closeDetail()">✕</button></div>
+    <div class="modal-body" id="detail-body"></div>
+    <div class="modal-footer" id="detail-footer"></div>
+  </div>
+</div>
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header"><h2 id="confirm-title">Confirmation</h2><button class="modal-close" onclick="closeConfirm()">✕</button></div>
+    <div class="modal-body"><p id="confirm-msg" style="color:var(--text2);font-size:13px;line-height:1.7"></p></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeConfirm()">Annuler</button><button class="btn btn-danger" id="confirm-ok-btn">Confirmer</button></div>
+  </div>
+</div>
+<nav class="mobile-nav">
+  <div class="mobile-nav-inner">
+    <button class="mob-btn active" onclick="navigate('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Tableau</button>
+    <button class="mob-btn" onclick="navigate('engines')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3"/></svg>Moteurs</button>
+    <button class="mob-btn" onclick="navigate('add')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Ajouter</button>
+    <button class="mob-btn" onclick="navigate('export')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/></svg>Export</button>
+  </div>
+</nav>
+<div id="toast"></div>
+
+<script>
+// ============================================================
+// CONFIG — backend URL
+// ============================================================
+const API_BASE = 'https://permissions-disc-lender-consciousness.trycloudflare.com'
+
+// ============================================================
+// AUTH — token storage + automatic Authorization header
+// ============================================================
+const TOKEN_KEY = 'authToken';
+const getToken   = () => localStorage.getItem(TOKEN_KEY);
+const setToken   = t  => localStorage.setItem(TOKEN_KEY, t);
+const clearToken = () => localStorage.removeItem(TOKEN_KEY);
+
+// Attach the token to every backend request, and bounce to login on 401.
+const _fetch = window.fetch.bind(window);
+window.fetch = (input, init = {}) => {
+  const url = typeof input === 'string' ? input : (input && input.url) || '';
+  const token = getToken();
+  if (token && url.startsWith(API_BASE)) {
+    init.headers = new Headers(init.headers || {});
+    init.headers.set('Authorization', 'Bearer ' + token);
+  }
+  return _fetch(input, init).then(res => {
+    if (res.status === 401 && url.startsWith(API_BASE)) {
+      clearToken();
+      showLogin();
+    }
+    return res;
+  });
+};
+
+let engines = [];
+let editingId = null;
+let activePort = 'all';
+let currentPhotos = { nameplate: [], engine: [] };
+
+// ============================================================
+// STATUS
+// ============================================================
+function setStatus(s) {
+  const dot = document.getElementById('sb-dot');
+  const lbl = document.getElementById('sb-status-label');
+  if (!dot) return;
+  dot.className = 'sb-dot ' + (s === 'online' ? 'online' : s === 'offline' ? 'offline' : '');
+  lbl.textContent = s === 'online' ? 'Backend connecté ✓' : s === 'offline' ? 'Hors ligne' : 'Connexion…';
+}
+
+// ============================================================
+// LOAD ENGINES
+// ============================================================
+async function loadEngines() {
+  try {
+    const res = await fetch(API_BASE + '/api/engines');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    engines = await res.json();
+    setStatus('online');
+    updateCounts();
+    renderDashboard();
+    renderEngines();
+  } catch (err) {
+    setStatus('offline');
+    toast('Erreur chargement : ' + err.message, 'err');
+  }
+}
+
+function updateCounts() {
+  document.getElementById('nav-count').textContent = engines.length;
+  document.getElementById('sidebar-count').textContent = engines.length + ' moteur(s)';
+}
+
+// ============================================================
+// POLLING — refresh list every 10 seconds for all users
+// ============================================================
+let _pollTimer = null;
+
+async function pollEngines() {
+  try {
+    const res = await fetch(API_BASE + '/api/engines');
+    if (!res.ok) return;
+    const fresh = await res.json();
+    // Only re-render if something actually changed
+    if (JSON.stringify(fresh) !== JSON.stringify(engines)) {
+      engines = fresh;
+      updateCounts();
+      renderDashboard();
+      renderEngines();
+    }
+  } catch (_) {}
+}
+
+function connectRealtime() {
+  if (_pollTimer) return;
+  _pollTimer = setInterval(pollEngines, 5000);
+}
+function disconnectRealtime() {
+  clearInterval(_pollTimer);
+  _pollTimer = null;
+}
+
+// ============================================================
+// NAVIGATE
+// ============================================================
+window.navigate = function (page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('.nav-item,.mob-btn').forEach(n => n.classList.remove('active'));
+  const map = { dashboard: 'tableau', engines: 'moteurs', add: 'ajouter', export: 'export' };
+  document.querySelectorAll('.nav-item,.mob-btn').forEach(n => { if (n.textContent.trim().toLowerCase().includes(map[page] || page)) n.classList.add('active'); });
+  if (page === 'add') { resetForm(); document.getElementById('form-title').textContent = 'Enregistrer un moteur'; document.getElementById('save-btn-label').textContent = 'Enregistrer le moteur'; }
+};
+
+// ============================================================
+// PHOTOS — local preview before upload
+// ============================================================
+window.handlePhotos = function (e, type) {
+  Array.from(e.target.files).forEach(file => {
+    const r = new FileReader();
+    r.onload = ev => { currentPhotos[type].push({ data: ev.target.result, file }); renderGallery(type); };
+    r.readAsDataURL(file);
+  });
+  e.target.value = '';
+};
+
+window.renderGallery = function (type) {
+  const g = document.getElementById('gallery-' + type);
+  const c = document.getElementById('count-' + type);
+  const n = document.getElementById('n-' + type);
+  const photos = currentPhotos[type];
+  if (!photos.length) { g.innerHTML = ''; c.style.display = 'none'; return; }
+  g.innerHTML = photos.map((p, i) => `<div class="photo-thumb"><img src="${p.data}" onclick="lightbox('${p.data}')"/><button class="del-btn" onclick="removePhoto('${type}',${i})">✕</button></div>`).join('');
+  n.textContent = photos.length; c.style.display = 'block';
+};
+
+window.removePhoto = function (type, idx) { currentPhotos[type].splice(idx, 1); renderGallery(type); };
+
+// ============================================================
+// FORM
+// ============================================================
+window.resetForm = function () {
+  editingId = null;
+  ['serial', 'brand', 'model', 'year', 'power', 'rpm', 'displacement', 'job', 'port', 'machine', 'machine-model'].forEach(k => { const el = document.getElementById('f-' + k); if (el) el.value = ''; });
+  currentPhotos = { nameplate: [], engine: [] };
+  ['nameplate', 'engine'].forEach(t => { const g = document.getElementById('gallery-' + t); const c = document.getElementById('count-' + t); if (g) g.innerHTML = ''; if (c) c.style.display = 'none'; });
+  document.getElementById('dup-warn').classList.remove('show');
+  document.getElementById('form-alert').innerHTML = '';
+};
+
+window.checkDuplicate = function () {
+  const s = document.getElementById('f-serial').value.trim();
+  const w = document.getElementById('dup-warn');
+  engines.some(e => e.serial === s && e.id !== editingId) ? w.classList.add('show') : w.classList.remove('show');
+};
+
+// ============================================================
+// SAVE ENGINE — POST/PUT multipart to Spring Boot backend
+// ============================================================
+window.saveEngine = async function () {
+  const serial       = document.getElementById('f-serial').value.trim();
+  const brand        = document.getElementById('f-brand').value;
+  const model        = document.getElementById('f-model').value.trim();
+  const port         = document.getElementById('f-port').value;
+  const machine      = document.getElementById('f-machine').value.trim();
+  const machineModel = document.getElementById('f-machine-model').value.trim();
+  const alertEl      = document.getElementById('form-alert');
+  const btn          = document.getElementById('save-btn');
+  alertEl.innerHTML  = '';
+
+  if (!serial || !brand || !model || !port || !machine || !machineModel) {
+    alertEl.innerHTML = '<div class="alert alert-err">Veuillez remplir tous les champs obligatoires (*)</div>'; return;
+  }
+  const isEditing = !!editingId;
+  if (!currentPhotos.nameplate.length && !isEditing) {
+    alertEl.innerHTML = '<div class="alert alert-warn">Au moins une photo de la plaque est requise.</div>'; return;
+  }
+  if (engines.find(e => e.serial === serial && e.id !== editingId)) {
+    alertEl.innerHTML = '<div class="alert alert-err">Numéro de série déjà existant.</div>'; return;
+  }
+
+  btn.disabled = true;
+  document.getElementById('save-btn-label').textContent = 'Enregistrement en cours…';
+
+  try {
+    const fd = new FormData();
+    fd.append('engine', JSON.stringify({
+      serial, brand, model,
+      year:         document.getElementById('f-year').value || '',
+      power:        document.getElementById('f-power').value || '',
+      rpm:          document.getElementById('f-rpm').value || '',
+      displacement: document.getElementById('f-displacement').value || '',
+      job:          document.getElementById('f-job').value.trim(),
+      port, machine,
+      machine_model: machineModel
+    }));
+
+    // Existing photos already stored on server (keep their URLs)
+    const existNP  = currentPhotos.nameplate.filter(p => !p.file).map(p => p.data);
+    const existENG = currentPhotos.engine.filter(p => !p.file).map(p => p.data);
+    fd.append('existingNameplateUrls', JSON.stringify(existNP));
+    fd.append('existingEngineUrls',    JSON.stringify(existENG));
+
+    // New photo files to upload
+    currentPhotos.nameplate.filter(p => p.file).forEach(p => fd.append('nameplatePhotos', p.file));
+    currentPhotos.engine.filter(p => p.file).forEach(p => fd.append('enginePhotos', p.file));
+
+    const url    = isEditing ? `${API_BASE}/api/engines/${editingId}` : `${API_BASE}/api/engines`;
+    const method = isEditing ? 'PUT' : 'POST';
+    const res    = await fetch(url, { method, body: fd });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Erreur ' + res.status }));
+      throw new Error(err.error || 'Erreur ' + res.status);
+    }
+
+    toast(isEditing ? 'Moteur mis à jour' : 'Moteur enregistré', 'ok');
+    resetForm();
+    navigate('engines');
+    loadEngines();
+  } catch (err) {
+    alertEl.innerHTML = `<div class="alert alert-err">Erreur : ${err.message}</div>`;
+  } finally {
+    btn.disabled = false;
+    document.getElementById('save-btn-label').textContent = isEditing ? 'Enregistrer les modifications' : 'Enregistrer le moteur';
+  }
+};
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDashboard() {
+  const total  = engines.length;
+  const brands = [...new Set(engines.map(e => e.brand))].length;
+  const ports  = [...new Set(engines.map(e => e.port))].length;
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card primary"><div class="stat-label">Total moteurs</div><div class="stat-value">${total}</div><div class="stat-sub">en base locale</div></div>
+    <div class="stat-card"><div class="stat-label">Marques</div><div class="stat-value">${brands}</div><div class="stat-sub">fabricants</div></div>
+    <div class="stat-card"><div class="stat-label">Ports</div><div class="stat-value">${ports}</div><div class="stat-sub">sites actifs</div></div>
+  `;
+  if (!total) {
+    document.getElementById('chart-row').innerHTML = '';
+    document.getElementById('recent-section').innerHTML = `<div class="empty"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="26" height="26"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3"/></svg></div><h3>Aucun moteur enregistré</h3><p>Commencez par enregistrer le premier moteur.</p><button class="btn btn-primary" onclick="navigate('add')">Enregistrer un moteur</button></div>`;
+    return;
+  }
+  const bc = {}; engines.forEach(e => { bc[e.brand] = (bc[e.brand] || 0) + 1; });
+  const maxB = Math.max(...Object.values(bc));
+  const pc = {}; engines.forEach(e => { pc[e.port] = (pc[e.port] || 0) + 1; });
+  const maxP = Math.max(...Object.values(pc));
+  document.getElementById('chart-row').innerHTML = `
+    <div class="chart-card"><div class="chart-title">Par marque</div>${Object.entries(bc).sort((a, b) => b[1] - a[1]).map(([b, c]) => `<div class="bar-row"><span class="bar-label">${b}</span><div class="bar-track"><div class="bar-fill" style="width:${c / maxB * 100}%"></div></div><span class="bar-val">${c}</span></div>`).join('')}</div>
+    <div class="chart-card"><div class="chart-title">Par port</div>${Object.entries(pc).sort((a, b) => b[1] - a[1]).map(([p, c]) => `<div class="bar-row"><span class="bar-label">${p}</span><div class="bar-track"><div class="bar-fill green" style="width:${c / maxP * 100}%"></div></div><span class="bar-val">${c}</span></div>`).join('')}</div>
+  `;
+  const recent = [...engines].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 3);
+  document.getElementById('recent-section').innerHTML = `<div style="font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);margin-bottom:12px">Ajouts récents</div><div class="engine-grid">${recent.map(engineCard).join('')}</div>`;
+}
+
+// ============================================================
+// ENGINE LIST
+// ============================================================
+window.renderEngines = function () {
+  const q = (document.getElementById('search-input') || {}).value?.toLowerCase() || '';
+  const ports = ['all', ...new Set(engines.map(e => e.port))];
+  document.getElementById('port-filters').innerHTML = ports.map(p => `<button class="filter-btn ${p === activePort ? 'active' : ''}" onclick="setPort('${p}')">${p === 'all' ? 'Tous les ports' : p}</button>`).join('');
+  const filtered = engines.filter(e => {
+    const mp = activePort === 'all' || e.port === activePort;
+    const mq = !q || [e.serial, e.brand, e.model, e.port, e.machine, e.machine_model].some(v => (v || '').toLowerCase().includes(q));
+    return mp && mq;
+  });
+  const grid = document.getElementById('engine-grid');
+  if (!filtered.length) { grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="26" height="26"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><h3>${engines.length ? 'Aucun résultat' : 'Aucun moteur'}</h3></div>`; return; }
+  grid.innerHTML = filtered.map(engineCard).join('');
+};
+
+window.setPort = function (p) { activePort = p; renderEngines(); };
+
+function engineCard(e) {
+  const np    = Array.isArray(e.photos?.nameplate) ? e.photos.nameplate : (e.photos?.nameplate ? [e.photos.nameplate] : []);
+  const eng   = Array.isArray(e.photos?.engine)    ? e.photos.engine    : (e.photos?.engine    ? [e.photos.engine]    : []);
+  const cover = np[0] || eng[0] || null;
+  const total = np.length + eng.length;
+  const coverSrc = cover ? (cover.startsWith('/uploads') ? API_BASE + cover : cover) : null;
+  return `<div class="engine-card" onclick="openDetail('${e.id}')">
+    <div class="engine-card-photo">
+      ${coverSrc ? `<img src="${coverSrc}" alt="plaque" loading="lazy"/>` : `<div class="no-photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="24" height="24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="12" cy="12" r="3"/></svg><span>Aucune photo</span></div>`}
+      <span class="port-badge">${e.port}</span>
+      ${total > 1 ? `<span class="photo-count-badge">📷 ${total}</span>` : ''}
+    </div>
+    <div class="engine-card-body">
+      <div class="card-header"><span class="engine-serial">${e.serial}</span><span class="brand-badge">${e.brand}</span></div>
+      <div class="engine-model">${e.model}</div>
+      <div class="engine-pills">
+        ${e.power ? `<span class="pill">${e.power} kW</span>` : ''}${e.rpm ? `<span class="pill">${e.rpm} tr/min</span>` : ''}${e.displacement ? `<span class="pill">${e.displacement} L</span>` : ''}${e.year ? `<span class="pill">${e.year}</span>` : ''}
+      </div>
+      <div class="card-machine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/></svg>${e.machine}${e.machine_model ? ' — ' + e.machine_model : ''}</div>
+    </div>
+  </div>`;
+}
+
+// ============================================================
+// DETAIL
+// ============================================================
+window.openDetail = function (id) {
+  const e = engines.find(x => x.id === id); if (!e) return;
+  document.getElementById('detail-title').textContent = `${e.brand} ${e.model}`;
+  const np    = Array.isArray(e.photos?.nameplate) ? e.photos.nameplate : (e.photos?.nameplate ? [e.photos.nameplate] : []);
+  const eng   = Array.isArray(e.photos?.engine)    ? e.photos.engine    : (e.photos?.engine    ? [e.photos.engine]    : []);
+  const cover = np[0] || eng[0] || null;
+  const coverSrc = cover ? (cover.startsWith('/uploads') ? API_BASE + cover : cover) : null;
+  const date = e.created_at ? new Date(e.created_at).toLocaleDateString('fr-MA', { day: '2-digit', month: 'long', year: 'numeric' }) : '—';
+  const specs = [
+    ['Numéro de série', e.serial, true], ['Marque', e.brand, false], ['Modèle / Type', e.model, true], ['Année', e.year || '—', false],
+    ['Puissance', e.power ? e.power + ' kW' : '—', true], ['Vitesse', e.rpm ? e.rpm + ' tr/min' : '—', true],
+    ['Cylindrée', e.displacement ? e.displacement + ' L' : '—', true], ['N° Travail', e.job || '—', true],
+    ['Port', e.port, false], ['Code engin', e.machine, true], ['Modèle engin', e.machine_model || '—', true], ['Enregistré le', date, false]
+  ];
+  function photoUrl(src) { return src.startsWith('/uploads') ? API_BASE + src : src; }
+  function gallHTML(arr, label) {
+    if (!arr.length) return '';
+    return `<div><div style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">${label} (${arr.length})</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px">
+      ${arr.map(src => { const u = photoUrl(src); return `<img src="${u}" loading="lazy" style="width:100%;height:100px;object-fit:cover;border-radius:var(--radius-sm);border:1.5px solid var(--border);cursor:zoom-in" onclick="lightbox('${u}')"/>`; }).join('')}
+    </div></div>`;
+  }
+  document.getElementById('detail-body').innerHTML = `
+    ${coverSrc ? `<div class="detail-hero"><img src="${coverSrc}" loading="lazy"/><div class="hero-overlay"></div><div class="hero-info"><div class="hero-serial">${e.serial}</div><div class="hero-model">${e.brand} ${e.model} — ${e.port}</div></div></div>` : ''}
+    <div><div class="section-label">Spécifications techniques</div>
+    <div class="specs-grid">${specs.map(([l, v, m]) => `<div class="spec-box"><div class="spec-label">${l}</div><div class="spec-val" ${m ? 'style="font-family:var(--mono);font-size:13px"' : ''}>${v}</div></div>`).join('')}</div></div>
+    ${(np.length || eng.length) ? `<div style="display:flex;flex-direction:column;gap:14px">
+      <div class="section-label">Photos (${np.length + eng.length} au total)</div>
+      ${gallHTML(np, 'Plaque signalétique')}${gallHTML(eng, 'Moteur')}
+    </div>` : ''}
+  `;
+  document.getElementById('detail-footer').innerHTML = `
+    <button class="btn btn-danger" onclick="confirmDelete('${e.id}')">Supprimer</button>
+    <button class="btn btn-secondary" onclick="editEngine('${e.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Modifier</button>
+    <button class="btn btn-primary" onclick="exportPDF('${e.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Fiche PDF</button>
+  `;
+  document.getElementById('detail-modal').classList.add('open');
+};
+
+window.closeDetail = function () { document.getElementById('detail-modal').classList.remove('open'); };
+
+window.lightbox = function (src) {
+  const lb = document.createElement('div');
+  lb.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;padding:20px';
+  lb.innerHTML = `<img src="${src}" style="max-width:100%;max-height:100%;border-radius:8px;object-fit:contain"/>`;
+  lb.onclick = () => lb.remove(); document.body.appendChild(lb);
+};
+
+// ============================================================
+// EDIT
+// ============================================================
+window.editEngine = function (id) {
+  closeDetail();
+  const e = engines.find(x => x.id === id); if (!e) return;
+  navigate('add');
+  editingId = id;
+  setTimeout(() => {
+    document.getElementById('form-title').textContent = 'Modifier le moteur';
+    document.getElementById('save-btn-label').textContent = 'Enregistrer les modifications';
+    ['serial', 'brand', 'model', 'year', 'power', 'rpm', 'displacement'].forEach(k => { const el = document.getElementById('f-' + k); if (el) el.value = e[k] || ''; });
+    document.getElementById('f-job').value          = e.job || '';
+    document.getElementById('f-port').value         = e.port;
+    document.getElementById('f-machine').value      = e.machine;
+    document.getElementById('f-machine-model').value = e.machine_model || '';
+    const np  = Array.isArray(e.photos?.nameplate) ? e.photos.nameplate : (e.photos?.nameplate ? [e.photos.nameplate] : []);
+    const eng = Array.isArray(e.photos?.engine)    ? e.photos.engine    : (e.photos?.engine    ? [e.photos.engine]    : []);
+    // Wrap existing URLs so renderGallery shows them (no .file = already saved on server)
+    currentPhotos.nameplate = np.map(url => ({ data: url.startsWith('/uploads') ? API_BASE + url : url, file: null, serverUrl: url }));
+    currentPhotos.engine    = eng.map(url => ({ data: url.startsWith('/uploads') ? API_BASE + url : url, file: null, serverUrl: url }));
+    renderGallery('nameplate'); renderGallery('engine');
+  }, 60);
+};
+
+// ============================================================
+// DELETE
+// ============================================================
+window.confirmDelete = function (id) {
+  closeDetail();
+  const e = engines.find(x => x.id === id); if (!e) return;
+  document.getElementById('confirm-title').textContent = 'Supprimer le moteur';
+  document.getElementById('confirm-msg').innerHTML = `Supprimer définitivement <strong>${e.brand} ${e.model}</strong> (S/N: ${e.serial}) ?<br><br><span style="color:var(--red);font-size:12px">Cette action est irréversible.</span>`;
+  document.getElementById('confirm-ok-btn').onclick = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/engines/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      toast('Moteur supprimé', 'ok');
+      loadEngines();
+    } catch (err) { toast('Erreur : ' + err.message, 'err'); }
+    closeConfirm();
+  };
+  document.getElementById('confirm-modal').classList.add('open');
+};
+
+window.confirmClear = function () {
+  document.getElementById('confirm-title').textContent = "Vider l'inventaire";
+  document.getElementById('confirm-msg').innerHTML = 'Supprimer <strong>tous</strong> les moteurs ?<br><br><span style="color:var(--red);font-size:12px">Action irréversible !</span>';
+  document.getElementById('confirm-ok-btn').onclick = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/engines`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      engines = [];
+      updateCounts();
+      renderDashboard();
+      renderEngines();
+      toast('Inventaire vidé', 'ok');
+    } catch (err) { toast('Erreur : ' + err.message, 'err'); }
+    closeConfirm();
+  };
+  document.getElementById('confirm-modal').classList.add('open');
+};
+
+window.closeConfirm = function () { document.getElementById('confirm-modal').classList.remove('open'); };
+
+// ============================================================
+// CSV
+// ============================================================
+window.exportCSV = function () {
+  if (!engines.length) { toast('Aucun moteur', 'err'); return; }
+  const h = ['Numéro de série', 'Marque', 'Modèle', 'Année', 'Puissance (kW)', 'Vitesse (tr/min)', 'Cylindrée (L)', 'N° Travail', 'Port', 'Code Engin', 'Modèle Engin', 'Date'];
+  const rows = engines.map(e => [e.serial, e.brand, e.model, e.year || '', e.power || '', e.rpm || '', e.displacement || '', e.job || '', e.port, e.machine, e.machine_model || '', e.created_at?.split('T')[0] || '']);
+  const csv = [h, ...rows].map(r => r.map(v => `"${(v || '').toString().replace(/"/g, '""')}"`).join(',')).join('\n');
+  dl(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }), 'inventaire_moteurs_' + today() + '.csv');
+  toast('CSV téléchargé', 'ok');
+};
+
+// ============================================================
+// IMPORT JSON → backend
+// ============================================================
+window.importJSON = async function (e) {
+  const file = e.target.files[0]; if (!file) return;
+  const logEl = document.getElementById('import-log');
+  logEl.innerHTML = '<div class="alert alert-ok">Import en cours…</div>';
+  try {
+    const text = await file.text();
+    let imported;
+    try { imported = JSON.parse(text); }
+    catch { logEl.innerHTML = '<div class="alert alert-err">Fichier JSON invalide.</div>'; return; }
+
+    const res = await fetch(`${API_BASE}/api/engines/import`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(imported)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Erreur ' + res.status }));
+      logEl.innerHTML = `<div class="alert alert-err">Erreur : ${err.error}</div>`; return;
+    }
+    const result = await res.json();
+    logEl.innerHTML = `<div class="alert alert-ok"><strong>Import terminé</strong><br>${result.added} ajouté(s) · ${result.skipped} ignoré(s) (doublons ou erreurs)</div>`;
+    if (result.added > 0) toast(result.added + ' moteur(s) importé(s)', 'ok');
+  } catch (err) { logEl.innerHTML = `<div class="alert alert-err">Erreur : ${err.message}</div>`; }
+  e.target.value = '';
+};
+
+// ============================================================
+// PDF SINGLE
+// ============================================================
+window.exportPDF = function (id) {
+  const e = engines.find(x => x.id === id); if (!e) return;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const W = 210, M = 20;
+  doc.setFillColor(26, 107, 255); doc.rect(0, 0, W, 32, 'F');
+  doc.setTextColor(255, 255, 255); doc.setFontSize(8); doc.setFont('helvetica', 'bold');
+  doc.text('MARSA MAROC — INVENTAIRE MOTEURS', M, 10);
+  doc.setFontSize(17); doc.text(e.brand + ' ' + e.model, M, 22);
+  doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.text('S/N : ' + e.serial, M, 29);
+  doc.setFillColor(255, 255, 255); doc.roundedRect(W - M - 28, 8, 28, 10, 2, 2, 'F');
+  doc.setTextColor(26, 107, 255); doc.setFontSize(8); doc.setFont('helvetica', 'bold');
+  doc.text(e.port, W - M - 14, 14, { align: 'center' });
+  let y = 42;
+  const specs = [['Numéro de série', e.serial], ['Marque', e.brand], ['Modèle', e.model], ['Année', e.year || '—'], ['Puissance', e.power ? e.power + ' kW' : '—'], ['Vitesse', e.rpm ? e.rpm + ' tr/min' : '—'], ['Cylindrée', e.displacement ? e.displacement + ' L' : '—'], ['N° Travail', e.job || '—'], ['Port', e.port], ['Code engin', e.machine], ['Modèle engin', e.machine_model || '—'], ['Date', e.created_at?.split('T')[0] || '—']];
+  doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(26, 107, 255);
+  doc.text('SPÉCIFICATIONS', M, y); y += 3;
+  doc.setDrawColor(26, 107, 255); doc.setLineWidth(0.5); doc.line(M, y, W - M, y); y += 6;
+  specs.forEach(([l, v], i) => {
+    if (i % 2 === 0) { doc.setFillColor(240, 244, 255); doc.rect(M, y - 3.5, W - M * 2, 7, 'F'); }
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(107, 114, 128);
+    doc.text(l, M + 2, y + 0.5); doc.setFont('courier', 'bold'); doc.setTextColor(26, 32, 44);
+    doc.text(String(v), M + 72, y + 0.5); y += 7;
+  });
+  doc.setFillColor(240, 242, 245); doc.rect(0, 283, W, 14, 'F');
+  doc.setFontSize(7); doc.setFont('helvetica', 'normal'); doc.setTextColor(156, 163, 175);
+  doc.text('Généré le ' + new Date().toLocaleDateString('fr-MA'), M, 290);
+  doc.text('MARSA MAROC — INVENTAIRE MOTEURS', W / 2, 290, { align: 'center' });
+  doc.save('moteur_' + e.serial + '_' + today() + '.pdf');
+  toast('PDF téléchargé', 'ok');
+};
+
+// ============================================================
+// PDF ALL
+// ============================================================
+window.exportAllPDF = async function () {
+  if (!engines.length) { toast('Aucun moteur', 'err'); return; }
+  const btn = document.getElementById('btn-all-pdf');
+  if (btn) { btn.textContent = 'Génération…'; btn.disabled = true; }
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const W = 210, M = 20;
+    for (let idx = 0; idx < engines.length; idx++) {
+      const e = engines[idx];
+      if (idx > 0) doc.addPage();
+      doc.setFillColor(26, 107, 255); doc.rect(0, 0, W, 32, 'F');
+      doc.setTextColor(255, 255, 255); doc.setFontSize(7); doc.setFont('helvetica', 'bold');
+      doc.text(`MARSA MAROC — INVENTAIRE MOTEURS (${idx + 1}/${engines.length})`, M, 10);
+      doc.setFontSize(16); doc.text(e.brand + ' ' + e.model, M, 22);
+      doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.text('S/N : ' + e.serial, M, 29);
+      doc.setFillColor(255, 255, 255); doc.roundedRect(W - M - 28, 8, 28, 10, 2, 2, 'F');
+      doc.setTextColor(26, 107, 255); doc.setFontSize(7); doc.setFont('helvetica', 'bold');
+      doc.text(e.port, W - M - 14, 14, { align: 'center' });
+      let y = 42;
+      const specs = [['Numéro de série', e.serial], ['Marque', e.brand], ['Modèle', e.model], ['Année', e.year || '—'], ['Puissance', e.power ? e.power + ' kW' : '—'], ['Vitesse', e.rpm ? e.rpm + ' tr/min' : '—'], ['Cylindrée', e.displacement ? e.displacement + ' L' : '—'], ['N° Travail', e.job || '—'], ['Port', e.port], ['Code engin', e.machine], ['Modèle engin', e.machine_model || '—'], ['Date', e.created_at?.split('T')[0] || '—']];
+      doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(26, 107, 255);
+      doc.text('SPÉCIFICATIONS', M, y); y += 3;
+      doc.setDrawColor(26, 107, 255); doc.setLineWidth(0.5); doc.line(M, y, W - M, y); y += 6;
+      specs.forEach(([l, v], i) => {
+        if (i % 2 === 0) { doc.setFillColor(240, 244, 255); doc.rect(M, y - 3.5, W - M * 2, 7, 'F'); }
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(107, 114, 128);
+        doc.text(l, M + 2, y + 0.5); doc.setFont('courier', 'bold'); doc.setTextColor(26, 32, 44);
+        doc.text(String(v), M + 72, y + 0.5); y += 7;
+      });
+      doc.setFillColor(240, 242, 245); doc.rect(0, 283, W, 14, 'F');
+      doc.setFontSize(7); doc.setFont('helvetica', 'normal'); doc.setTextColor(156, 163, 175);
+      doc.text('Généré le ' + new Date().toLocaleDateString('fr-MA'), M, 290);
+      doc.text('MARSA MAROC', W / 2, 290, { align: 'center' });
+      doc.text(`Page ${idx + 1}/${engines.length}`, W - M, 290, { align: 'right' });
+    }
+    doc.save('inventaire_complet_' + today() + '.pdf');
+    toast(engines.length + ' fiches PDF générées', 'ok');
+  } catch (err) { toast('Erreur PDF : ' + err.message, 'err'); }
+  finally { if (btn) { btn.textContent = 'Télécharger PDF'; btn.disabled = false; } }
+};
+
+// ============================================================
+// UTILS
+// ============================================================
+function dl(blob, name) { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
+function today() { const d = new Date(); return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`; }
+window.toast = function (msg, type = '') {
+  const t = document.createElement('div');
+  t.className = 'toast-item ' + (type === 'ok' ? 'ok' : type === 'err' ? 'err' : '');
+  const icon = type === 'ok' ? '<svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>' : type === 'err' ? '<svg viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.5" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg>' : '';
+  t.innerHTML = icon + msg;
+  document.getElementById('toast').appendChild(t);
+  setTimeout(() => t.remove(), 3200);
+};
+
+// ============================================================
+// LOGIN / LOGOUT / INIT
+// ============================================================
+function showLogin() {
+  disconnectRealtime();
+  setStatus('offline');
+  document.getElementById('login-overlay').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+function showApp() {
+  document.getElementById('login-overlay').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  loadEngines();    // always load via REST immediately
+  connectRealtime(); // WebSocket for real-time updates on top
+}
+
+window.doLogin = async function (e) {
+  e.preventDefault();
+  const btn = document.getElementById('login-btn');
+  const errEl  = document.getElementById('login-error');
+  const errMsg = document.getElementById('login-error-msg');
+  errEl.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Connexion…';
+  try {
+    const res = await fetch(API_BASE + '/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: document.getElementById('login-user').value,
+        password: document.getElementById('login-pass').value
+      })
+    });
+    if (!res.ok) {
+      errMsg.textContent = 'Identifiant ou mot de passe incorrect';
+      errEl.style.display = 'flex';
+      return false;
+    }
+    const data = await res.json();
+    setToken(data.token);
+    document.getElementById('login-pass').value = '';
+    showApp();
+  } catch (err) {
+    errMsg.textContent = 'Erreur de connexion au serveur';
+    errEl.style.display = 'flex';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Se connecter';
+  }
+  return false;
+};
+
+window.logout = function () {
+  clearToken();
+  showLogin();
+};
+
+// On load: validate the stored token with the backend before showing the app.
+// This catches expired or invalid tokens that are still in localStorage.
+(async function init() {
+  if (!getToken()) { showLogin(); return; }
+  try {
+    const res = await fetch(API_BASE + '/api/auth/verify');
+    if (res.status === 401) { clearToken(); showLogin(); return; }
+    showApp();
+  } catch {
+    // Backend unreachable — show app anyway; WebSocket will show offline status.
+    showApp();
+  }
+})();
+</script>
+</body>
+</html>
